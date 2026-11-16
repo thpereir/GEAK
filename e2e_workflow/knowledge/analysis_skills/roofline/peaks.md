@@ -11,8 +11,10 @@ not pre-derate the numbers here. Do not put sparse (2:4)
 rates in the yaml `flops` map.
 
 **Compute peaks need validation; the memory axis is the trustworthy one.** BF16 and FP16 run at the
-same rate on the matrix core of every part below (MFMA on CDNA, WMMA on RDNA), so the two `flops`
-entries in each section must be **equal** — they are, and that equality is the check to keep.
+same rate on the matrix core of every part below that has one (MFMA on CDNA, WMMA on RDNA3+), so the
+two `flops` entries in those sections must be **equal** — they are, and that equality is the check to
+keep. RDNA2 (`gfx1030`) has no matrix core and no bf16 arithmetic: bf16 is converted and computed at
+the fp32 rate, so its `bf16` entry equals `fp32`, not `fp16`.
 Empirical matrix-core microbenchmarks (e.g. from rocprof-compute) frequently report a BF16 peak ~2×
 low, which inflates any BF16 compute-axis `roofline_pct` (sometimes above 100%, where `SKILL.md` §6
 L3 flags it `suspect`). At decode, prefer `hbm_util` and only rank on a compute-axis number once its
@@ -111,6 +113,24 @@ flops:                         # dense WMMA peaks, FLOP/s — theoretical
   int8: 6.0e13
 l2_bytes: 2097152
 mall_bytes: 33554432
+```
+
+## gfx1030 — RDNA2, Radeon PRO V620 (72 CU) class
+Theoretical at the 2.57 GHz maximum engine clock: 72 CU × 64 lanes × 2 (FMA) × 2.57 GHz for fp32,
+twice that for fp16 (`v_pk_fma_f16` / `v_dot2_f32_f16`). No matrix core. One ISA covers 60- to 80-CU
+parts, so the row holds only at `cu: 72` (`resolve_peaks` gates on it, as for gfx1151). Measured
+ceilings and the sustained clock are in `perf_knowledge/hardware/rdna2_gfx1030/peak_tables.md`.
+`int8` is omitted: `v_dot4_i32_i8` exists but its rate was not measured.
+```yaml
+gfx: gfx1030
+cu: 72
+hbm_bw_bytes_s: 512.0e9       # GDDR6, 256-bit at 16 Gbps — pin rate, NOT HBM
+flops:                         # VALU / dot peaks, FLOP/s — theoretical; no matrix core
+  fp32: 2.37e13
+  bf16: 2.37e13                # no bf16 dot or packed bf16 FMA: converted, fp32 rate at best
+  fp16: 4.74e13                # v_pk_fma_f16 / v_dot2_f32_f16, 2x fp32
+l2_bytes: 4194304
+mall_bytes: 134217728
 ```
 
 ## Unknown gfx — derived fallback (confidence: low)

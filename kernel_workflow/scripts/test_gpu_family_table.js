@@ -42,8 +42,11 @@ const policy = (f) => `${f.name} ${f.isolate ? 'isolated' : 'open'} ${f.matrixCo
 const CDNA = 'default open MFMA';
 const R9700 = 'R9700 isolated WMMA';
 const RDNA35 = 'RDNA 3.5 isolated WMMA';
+const RDNA2 = 'RDNA 2 isolated none';
 const EXPECT = {
   gfx90a: CDNA, gfx942: CDNA, gfx950: CDNA, gfx1250: CDNA,
+  gfx1030: RDNA2, gfx1031: RDNA2, gfx1032: RDNA2, gfx1036: RDNA2,
+  gfx10300: CDNA, gfx1010: CDNA, gfx1012: CDNA, // RDNA1 has no row: the default
   gfx1100: CDNA, gfx1101: CDNA, gfx1102: CDNA, gfx1103: CDNA, // RDNA3 has no row: the default
   gfx1150: RDNA35, gfx1151: RDNA35, gfx1152: RDNA35, gfx1153: RDNA35,
   gfx11510: CDNA, gfx115: CDNA,

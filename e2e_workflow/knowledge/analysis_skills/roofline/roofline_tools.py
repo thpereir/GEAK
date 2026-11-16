@@ -220,6 +220,12 @@ def is_client_rdna35(gfx):
     return bool(re.fullmatch(r"gfx115\d", str(gfx or "").lower()))
 
 
+def is_rdna2(gfx):
+    """True for RDNA2 (gfx1030-gfx1036): no matrix core, so the MFMA-based derivation is meaningless,
+    and one ISA ships with 60 to 80 CUs."""
+    return bool(re.fullmatch(r"gfx103\d", str(gfx or "").lower()))
+
+
 def resolve_peaks(peaks_md_path, gfx, device=0, product=None, cu=None):
     """Resolve tabulated peaks; never derive a numeric roofline for client RDNA.
 
@@ -227,17 +233,19 @@ def resolve_peaks(peaks_md_path, gfx, device=0, product=None, cu=None):
     and its GDDR clock interpretation is toolchain-dependent; an RDNA 3.5 APU's
     "memory clock" is system DRAM. An absent table entry on gfx120x or gfx115x is
     therefore a hard unknown rather than a low-confidence numeric denominator.
-    R9700 peaks require product='r9700'. A gfx115x row also requires ``cu``, the
-    physical CU count, to equal the row's: one ISA ships with several CU counts.
-    CDNA5 gfx1250 is in neither family and may derive.
+    R9700 peaks require product='r9700'. A gfx115x or gfx103x row also requires ``cu``,
+    the physical CU count, to equal the row's: one ISA ships with several CU counts.
+    RDNA2 (gfx103x) has no matrix core, so an untabulated part is a hard unknown too.
+    CDNA5 gfx1250 is in none of these families and may derive.
     """
     peaks = load_peaks(peaks_md_path, gfx, product=product)
-    # On gfx115x the row holds only for its own whole CU count (40.5 or True is not 40).
-    if peaks and is_client_rdna35(gfx) and str(cu).strip() != "%d" % (peaks.get("cu") or -1):
+    cu_gated = is_client_rdna35(gfx) or is_rdna2(gfx)
+    # On gfx115x / gfx103x the row holds only for its own whole CU count (40.5 or True is not 40).
+    if peaks and cu_gated and str(cu).strip() != "%d" % (peaks.get("cu") or -1):
         peaks = None
     if peaks:
         return peaks
-    if is_client_rdna4(gfx) or is_client_rdna35(gfx):
+    if is_client_rdna4(gfx) or cu_gated:
         return None
     return derive_peaks_from_props(device)
 
@@ -528,7 +536,7 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--selftest", action="store_true", help="reproduce the SKILL.md worked example")
     ap.add_argument("--peaks", metavar="GFX", help="print the peak table entry for GFX as JSON")
-    ap.add_argument("--cu", type=int, default=None, help="physical CU count (rocminfo); required on gfx115x")
+    ap.add_argument("--cu", type=int, default=None, help="physical CU count (rocminfo); required on gfx115x and gfx103x")
     a = ap.parse_args()
     if a.peaks:
         p = resolve_peaks(

@@ -80,6 +80,9 @@ Read, as reference, before writing:
     Do not use Instinct MFMA tiles, FNUZ, or gfx950 MX.
   - **gfx11* (RDNA3.5 client):** read `SKILL_DIR/knowledge/amd_ryzen.md` for the matrix ISA and the
     dtypes it supports.
+  - **gfx103* (RDNA2):** read `SKILL_DIR/knowledge/amd_rdna2.md`. There is no matrix core (no WMMA,
+    no MFMA): fp16 math runs on `v_dot2_f32_f16` / `v_pk_fma_f16`, bf16 has no arithmetic of its own,
+    and int8 GEMM has no library path.
   - **gfx942 / gfx950 (Instinct):** read `SKILL_DIR/knowledge/amd_instinct.md` §3 for the
     arch-specific fp8 format + MFMA shapes — **fp8 is FNUZ on gfx942 (CDNA3) but OCP on gfx950
     (CDNA4), which also adds MXFP4/MXFP6**; picking the wrong fp8 format silently fails correctness.

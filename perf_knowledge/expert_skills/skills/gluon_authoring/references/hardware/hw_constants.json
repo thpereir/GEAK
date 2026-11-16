@@ -432,6 +432,66 @@
       ],
       "scaled_mfma": false,
       "_note": "RDNA3 discrete; WMMA _w32 planning default"
+    },
+    "gfx1030": {
+      "family": "RDNA2",
+      "wave_size": 32,
+      "lds_per_wg_kib": 64,
+      "vgpr_per_wave": 256,
+      "vgpr_file_per_simd": 1024,
+      "vgpr_alloc_granule": 16,
+      "max_waves_per_simd": 16,
+      "vgpr_wave_steps": [
+        [
+          64,
+          16
+        ],
+        [
+          80,
+          12
+        ],
+        [
+          96,
+          10
+        ],
+        [
+          112,
+          9
+        ],
+        [
+          128,
+          8
+        ],
+        [
+          144,
+          7
+        ],
+        [
+          160,
+          6
+        ],
+        [
+          192,
+          5
+        ],
+        [
+          256,
+          4
+        ]
+      ],
+      "_vgpr_occupancy_basis": "compiler-derived (same sweep, ROCm LLVM -mcpu=gfx1030; gfx1031/gfx1036 give the same steps).",
+      "lds_per_wgp_kib": 128,
+      "isa_types": [],
+      "dot_isa": [
+        "v_dot2_f32_f16",
+        "v_dot2c_f32_f16",
+        "v_dot4_i32_i8",
+        "v_dot4c_i32_i8",
+        "v_dot8_i32_i4",
+        "v_pk_fma_f16"
+      ],
+      "scaled_mfma": false,
+      "_note": "RDNA2 (Navi 21 class; measured part Radeon PRO V620, 72 CU). No matrix core: no WMMA, no MFMA, no bf16 dot; fp16 work runs on v_dot2 / v_pk_fma. Wave64 is assemblable but wave32 is the compute default."
     }
   }
 }

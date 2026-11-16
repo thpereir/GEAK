@@ -5,11 +5,13 @@ Why a shared module: the CDNA formula (`512 / round_up(vgpr, 8)`, ArchVGPR+AGPR 
 file) is NOT the RDNA formula, and it was hard-coded in `calc_perf.py occ`, the loop audits,
 `hw_budget.py` and `probe.py`. On an RDNA target every one of them under-reports occupancy by
 2-3x -- 249 VGPRs on gfx1201 is 5 waves/SIMD, not 1 or 2 -- which reads as "register-capped"
-and sends a round chasing pressure that is not there. Three register-file geometries exist:
+and sends a round chasing pressure that is not there. Five register-file geometries exist:
 
     CDNA  (gfx90a/942/950)          wave64  512 VGPR/SIMD  granule  8  cap  8   arch+AGPR COMBINED
     CDNA5 (gfx1250)                 wave32 1024 VGPR/SIMD  granule 16  cap 16
     RDNA  (gfx11*/gfx1151/gfx120*)  wave32 1536 VGPR/SIMD  granule 24  cap 16   no AGPR file
+    RDNA2 (gfx103*)                 wave32 1024 VGPR/SIMD  granule 16  cap 16   no AGPR file
+    RDNA1 (gfx101*)                 wave32 1024 VGPR/SIMD  granule  8  cap 20   no AGPR file
 
 `waves = min(cap, file // (granule * ceil(vgpr / granule)))`.
 
@@ -78,6 +80,20 @@ MODELS = {
         "max_waves_per_simd": 16, "combined_arch_accum": False,
         "label": "RDNA wave32: 1536 VGPR/SIMD, granule 24, cap 16 (no AGPR file)",
     },
+    # RDNA2 and RDNA1 have the smaller 1024-entry file; mapping them to the RDNA3 model above
+    # over-reports occupancy (gfx1030 at 128 VGPRs is 8 waves/SIMD, not 10).
+    "rdna2": {
+        "wave_size": 32, "vgpr_file_per_simd": 1024, "vgpr_per_wave": 256,
+        "vgpr_alloc_granule": 16,
+        "max_waves_per_simd": 16, "combined_arch_accum": False,
+        "label": "RDNA2 wave32: 1024 VGPR/SIMD, granule 16, cap 16 (no AGPR file)",
+    },
+    "rdna1": {
+        "wave_size": 32, "vgpr_file_per_simd": 1024, "vgpr_per_wave": 256,
+        "vgpr_alloc_granule": 8,
+        "max_waves_per_simd": 20, "combined_arch_accum": False,
+        "label": "RDNA1 wave32: 1024 VGPR/SIMD, granule 8, cap 20 (no AGPR file)",
+    },
 }
 
 # gfx -> family. Prefix-matched longest-first, so a new gfx94x/gfx120x lands correctly without
@@ -86,7 +102,7 @@ MODELS = {
 _FAMILY_PREFIXES = [
     ("gfx90a", "cdna"), ("gfx908", "cdna"), ("gfx94", "cdna"), ("gfx95", "cdna"),
     ("gfx125", "cdna5"),
-    ("gfx10", "rdna"), ("gfx11", "rdna"), ("gfx12", "rdna"),
+    ("gfx101", "rdna1"), ("gfx103", "rdna2"), ("gfx11", "rdna"), ("gfx12", "rdna"),
 ]
 
 _ARCH_RE = re.compile(r"\bgfx(?:9[0-9a-f]{2}|1[0-9]{3})\b")
@@ -323,6 +339,12 @@ def _selftest():
                     (256, 5)],
         "gfx1201": [(96, 16), (120, 12), (144, 10), (168, 9), (192, 8), (216, 7), (240, 6),
                     (256, 5)],
+        "gfx1030": [(64, 16), (80, 12), (96, 10), (112, 9), (128, 8), (144, 7), (160, 6),
+                    (192, 5), (256, 4)],
+        "gfx1036": [(64, 16), (80, 12), (96, 10), (112, 9), (128, 8), (144, 7), (160, 6),
+                    (192, 5), (256, 4)],
+        "gfx1010": [(48, 20), (56, 18), (64, 16), (72, 14), (80, 12), (88, 11), (96, 10),
+                    (112, 9), (128, 8), (144, 7), (168, 6), (200, 5), (256, 4)],
     }
     for arch, table in steps.items():
         lo = 1
@@ -334,9 +356,10 @@ def _selftest():
     # The bug this module exists to kill: the CDNA formula on an RDNA target.
     assert waves_by_vgpr(249, "gfx1201")[0] == 5, waves_by_vgpr(249, "gfx1201")
     assert waves_by_vgpr(249, "gfx942")[0] == 2, waves_by_vgpr(249, "gfx942")
-    # An unknown arch must refuse rather than fall back to CDNA.
-    waves, label = waves_by_vgpr(128, "gfx1399")
-    assert waves is None and "unknown arch" in label, (waves, label)
+    # An unknown arch must refuse rather than fall back to CDNA (or to another RDNA generation).
+    for unknown in ("gfx1399", "gfx1020"):
+        waves, label = waves_by_vgpr(128, unknown)
+        assert waves is None and "unknown arch" in label, (unknown, waves, label)
 
     # Synthetic KD fragments -- hand-written, not excerpted from any kernel.
     rdna_asm = ('\t.amdgcn_target "amdgcn-amd-amdhsa--gfx1201"\n'

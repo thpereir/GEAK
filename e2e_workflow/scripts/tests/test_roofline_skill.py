@@ -137,6 +137,35 @@ class TestPeaks(unittest.TestCase):
         self.assertIsNotNone(m["ridge_point"])
         self.assertLess(m["attainable_speedup"], 2.0)
 
+    def test_gfx1030_row(self):
+        """RDNA2 (V620): GDDR6 pin rate, CU-gated, no matrix core. fp16 runs packed / dot2 at 2x fp32;
+        bf16 has no arithmetic of its own, so its ceiling is the fp32 rate; int8 is not tabulated."""
+        p = rt.load_peaks(PEAKS_MD, "gfx1030")
+        self.assertIsNotNone(p)
+        self.assertAlmostEqual(p["hbm_bw_bytes_s"], 512.0e9, delta=1e9)
+        self.assertEqual(p["cu"], 72)
+        self.assertAlmostEqual(rt.peak_flops_for(p, "fp16"), 2 * rt.peak_flops_for(p, "fp32"), delta=1e11)
+        self.assertEqual(rt.peak_flops_for(p, "bf16"), rt.peak_flops_for(p, "fp32"))
+        self.assertIsNone(rt.peak_flops_for(p, "int8"))
+        # One ISA ships with 60 (W6800, RX 6800), 72 (V620, RX 6800 XT) and 80 (RX 6900 XT) CUs.
+        for cu in (72, "72"):
+            self.assertIsNotNone(rt.resolve_peaks(PEAKS_MD, "gfx1030", cu=cu), cu)
+        for cu in (60, 80, None, 72.5, True):
+            self.assertIsNone(rt.resolve_peaks(PEAKS_MD, "gfx1030", cu=cu), cu)
+
+    def test_untabulated_rdna2_is_hard_unknown_not_derived(self):
+        """An MFMA-based derivation means nothing on a part with no matrix core."""
+        self.assertTrue(rt.is_rdna2("gfx1030") and rt.is_rdna2("gfx1036"))
+        self.assertFalse(rt.is_rdna2("gfx1010") or rt.is_rdna2("gfx1100") or rt.is_rdna2("gfx10300"))
+        called = []
+        original = rt.derive_peaks_from_props
+        rt.derive_peaks_from_props = lambda device=0: called.append(device) or {"cu": 1}
+        try:
+            self.assertIsNone(rt.resolve_peaks(PEAKS_MD, "gfx1031", cu=40))
+        finally:
+            rt.derive_peaks_from_props = original
+        self.assertEqual(called, [])
+
     def test_bf16_equals_fp16_on_every_arch_that_tabulates_flops(self):
         """peaks.md's own load-bearing cross-check: the matrix core runs both at the same rate
         (MFMA on CDNA, WMMA on RDNA), so an inequality means the compute axis is inflated."""

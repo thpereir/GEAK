@@ -26,14 +26,16 @@ hardware reference that matches what you found:
 |---|---|
 | `gfx94*` / `gfx95*` — CDNA, Instinct MI-series | `SKILL_DIR/knowledge/amd_instinct.md` |
 | `gfx11*` — RDNA3.5, Radeon / Ryzen AI client parts | `SKILL_DIR/knowledge/amd_ryzen.md` |
+| `gfx103*` — RDNA2, Radeon / Radeon PRO (V620 class) | `SKILL_DIR/knowledge/amd_rdna2.md` |
 | `gfx1201` — RDNA4 client (R9700 class) | `SKILL_DIR/knowledge/amd_rdna4.md` |
 
 Each opens with detection commands for that family; none is the default.
 Record the card (gfx arch, CU/WGP count, memory peak) in your metrics — the roofline ceiling and
 grid-sizing advice downstream depend on the real card, not an assumed one.
-On RDNA4 and on gfx115x, missing MFMA%/CDNA PMC names is expected: do **not** fail the profile
+On RDNA4, gfx115x and gfx103x, missing MFMA%/CDNA PMC names is expected: do **not** fail the profile
 phase; classify from kernel-trace + latency table (`amd_rdna4.md` §5; for gfx115x, `amd_ryzen.md` §2
-explains the missing matrix-utilization counter).
+explains the missing matrix-utilization counter; for gfx103x, `amd_rdna2.md` §2 lists the counters
+that exist).
 
 ## Steps
 1. From `EVAL_DIR/COMMANDMENT.md` get the PROFILE and benchmark commands and the parse hint.

@@ -71,6 +71,8 @@ const GPU_FAMILIES = [
   { name: 'R9700', isa: /^gfx1201$/, isolate: true, matrixCore: 'WMMA' },
   // RDNA 3.5 APUs (Strix Halo is gfx1151). Only a gfx1151 Radeon 8060S has been run.
   { name: 'RDNA 3.5', isa: /^gfx115\d$/, isolate: true, matrixCore: 'WMMA' },
+  // RDNA2 (gfx103x). No matrix core: fp16 runs on v_dot2 / v_pk_fma. Measured on a Radeon PRO V620.
+  { name: 'RDNA 2', isa: /^gfx103\d$/, isolate: true, matrixCore: 'none' },
 ];
 const GPU_FAMILY_DEFAULT = { name: 'default', isa: null, isolate: false, matrixCore: 'MFMA' };
 const gpuFamily = (gfx) => GPU_FAMILIES.find((f) => f.isa.test(String(gfx || ''))) || GPU_FAMILY_DEFAULT;
@@ -2342,9 +2344,10 @@ const PHYSICAL_CU_COUNT = EXPECTED_PHYSICAL_CU_COUNT > 0
 // Products with a `product:` section in e2e_workflow/knowledge/analysis_skills/roofline/peaks.md.
 const CALIBRATED_PRODUCTS = ['r9700', 'r9600d'];
 // ISA rows of peaks.md that hold only at the CU count they were measured on: the 8050S / 8040S share
-// gfx1151 with the 40-CU 8060S. Any other part of an isolated family is a hard unknown, as
-// roofline_tools.resolve_peaks(gfx, cu=...) also returns.
-const TABULATED_CU = { gfx1151: 40 };
+// gfx1151 with the 40-CU 8060S, and gfx1030 ships with 60 to 80 CUs (the row is the 72-CU V620).
+// Any other part of an isolated family is a hard unknown, as roofline_tools.resolve_peaks(gfx, cu=...)
+// also returns.
+const TABULATED_CU = { gfx1151: 40, gfx1030: 72 };
 const GPU_FAMILY = gpuFamily(GFX);
 const ROOFLINE_STATUS = (CALIBRATED_PRODUCTS.includes(DEVICE_TARGET) && GFX === 'gfx1201')
   ? `calibrated-${DEVICE_TARGET}`

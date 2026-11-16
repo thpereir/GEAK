@@ -12,6 +12,7 @@ These ids are authoritative. Use them verbatim in frontmatter and in `sota_regis
 | `gfx950` | CDNA4 | MI350X, MI355X |
 | `gfx1201` | RDNA4 | ISA shared by R9700, RX 9070 XT, and other products; GEAK product calibration is R9700-only |
 | `gfx1151` | RDNA3.5 | integrated GPU of the Strix Halo APU; one ISA covers the Radeon 8060S (40 CU), 8050S (32 CU) and 8040S (16 CU) behind one generic nameplate, so there is no product key — peaks are calibrated for the 40-CU SKU and CU count is the only on-box discriminator |
+| `gfx1030` | RDNA2 | no matrix core; one ISA covers the Radeon PRO V620 and RX 6800 XT (72 CU), W6800 and RX 6800 (60 CU) and RX 6900 XT (80 CU); GEAK's measured reference is the V620, and its peaks hold only at 72 CU |
 
 ## dtypes (`dtype`)
 `fp32` · `tf32`(N/A on CDNA4, removed) · `bf16` · `fp16` ·

@@ -20,6 +20,9 @@ done
 # discrete RDNA3 and the gfx1103 iGPU keep the default.
 for arch in gfx1150 gfx1151; do [[ "$(profiler_priority_for_arch "$arch")" == "$rdna" ]]; done
 for arch in gfx1100 gfx1103; do [[ "$(profiler_priority_for_arch "$arch")" == "$gfx950" ]]; done
+# RDNA2 takes the same order: rocprofv3 1.3.0 lists the cache / LDS / SQ counters on a gfx1030 V620;
+# rocprof-compute was not verified there.
+for arch in gfx1030 gfx1031 gfx1036; do [[ "$(profiler_priority_for_arch "$arch")" == "$rdna" ]]; done
 
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
@@ -44,4 +47,4 @@ chmod +x "$tmp/rocminfo"
 detected="$(PATH="$tmp:$PATH" PYTORCH_ROCM_ARCH= profile_detect_arch)"
 [[ "$detected" == "gfx1201" ]]
 
-echo "PASS: gfx1201, gfx115x, gfx950, gfx942, gfx90a, gfx1100, gfx1103, and unknown policies are explicit."
+echo "PASS: gfx1201, gfx115x, gfx103x, gfx950, gfx942, gfx90a, gfx1100, gfx1103, and unknown policies are explicit."

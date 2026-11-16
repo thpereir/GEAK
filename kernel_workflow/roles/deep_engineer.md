@@ -46,7 +46,8 @@ Read ALL of these before and during your work, and re-consult as the bottleneck 
 - `SKILL_DIR/knowledge/hip_optimization.md` / `triton_optimization.md` — per the kernel's language.
 - `SKILL_DIR/knowledge/wrapper_optimization.md` — host/runtime patterns (you own these too).
 - the hardware reference for the card detected on-box — `SKILL_DIR/knowledge/amd_instinct.md` (`gfx94*`/`gfx95*`,
-  CDNA Instinct, MFMA, wave64), `SKILL_DIR/knowledge/amd_ryzen.md` (`gfx11*`, RDNA3.5 client), or
+  CDNA Instinct, MFMA, wave64), `SKILL_DIR/knowledge/amd_ryzen.md` (`gfx11*`, RDNA3.5 client),
+  `SKILL_DIR/knowledge/amd_rdna2.md` (`gfx103*`, RDNA2, no matrix core, wave32), or
   `SKILL_DIR/knowledge/amd_rdna4.md` (`gfx1201`, RDNA4, WMMA, wave32). DETECT first
   (`rocminfo` gfx), then use that card's peaks for the roofline estimate (below). Learned gfx950/gfx942
   cards do not transfer to RDNA4.
@@ -73,8 +74,8 @@ flydsl→`flydsl`, tilelang→`tilelang`; read `overview.md`/`patterns.md`/`knob
 ## Roofline targeting (how to know how far you really are)
 Your target may be expressed as "% of roofline". Estimate the ceiling, then drive toward it:
 0. **Detect the card first** (`rocminfo` → gfx arch + CU/WGP count, `rocm-smi` → name), then read the matching
-   hardware reference — `amd_instinct.md` for `gfx94*`/`gfx95*`, `amd_ryzen.md` for `gfx11*`, `amd_rdna4.md`
-   for `gfx1201` — and use ITS peaks below. Never assume a default: peaks differ by integer factors across
+   hardware reference — `amd_instinct.md` for `gfx94*`/`gfx95*`, `amd_ryzen.md` for `gfx11*`, `amd_rdna2.md`
+   for `gfx103*`, `amd_rdna4.md` for `gfx1201` — and use ITS peaks below. Never assume a default: peaks differ by integer factors across
    cards, and so do the fp8 format and the matrix ISA. On RDNA4, MFMA/MX peaks do not exist — use a
    the product's datasheet peaks (see `peaks.md`) only
    when `ROOFLINE_STATUS` is `calibrated-<product>` or `tabulated-<gfx>`;
